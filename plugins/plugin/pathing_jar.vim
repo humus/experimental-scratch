@@ -13,8 +13,8 @@ let g:manifest_dict = {
 
 
 fun! s:create_vimtempstuff_dir() "{{{
-  if !isdirectory('.vimtempstuff')
-    call mkdir('.vimtempstuff', 'p')
+  if !isdirectory('.vimjavastuff')
+    call mkdir('.vimjavastuff', 'p')
   endif
 
   echo "directory created"
@@ -26,21 +26,19 @@ fun! s:create_manifest() "{{{
         \ g:manifest_dict['version'],
         \ g:manifest_dict['by']]
 
-  let cpath_list = s:extract_classpath_lines()
+  let l:classpath_str = s:discard_non_classpath_lines(split(system(g:maven_command . ' dependency:build-classpath'), '\n'))
+  let cpath_list = s:format_cpath_lines(l:classpath_str)
 
-
-  call writefile(data, '.vimtempstuff/manifest')
-  call writefile(cpath_list, '.vimtempstuff/manifest', 'a')
+  call writefile(data, '.vimjavastuff/manifest')
+  call writefile(cpath_list, '.vimjavastuff/manifest', 'a')
+  call writefile(filter(split(l:classpath_str, '\v(<[A-Z]|[A-Z])@<![:;]'), 'v:val =~ "jar$"')
+        \ , '.vimjavastuff/jars_on_cp')
 
 endfunction "}}}
 
-fun! s:extract_classpath_lines() "{{{
-
-  let l:classpath_str=system(g:maven_command . ' dependency:build-classpath')
-  let l:cpath=s:discard_non_classpath_lines(split(l:classpath_str, '\n'))
-
+fun! s:extract_classpath_lines(classpath_str) "{{{
+  let l:cpath=s:discard_non_classpath_lines(split(a:classpath_str, '\n'))
   return s:format_cpath_lines(l:cpath)
-
 endfunction "}}}
 
 fun! s:format_cpath_lines(cpath) "{{{
@@ -77,18 +75,11 @@ fun! s:create_fake_jar_and_index_file() "{{{
   call s:create_manifest()
 
   let curdir=getcwd()
-  execute "lcd " . curdir . '/.vimtempstuff'
+  execute "lcd " . curdir . '/.vimjavastuff'
 
   let out=system(g:jar_command . " -cmf manifest ../.mvncp.jar ")
   echom out
   execute "lcd ". curdir
-
-
-  if has('win32')
-    call system('rmdir /Q /S .vimtempstuff')
-  else
-    call system('rmdir -rf .vimtempstuff')
-  endif
 
   redraw!
 endfunction "}}}
@@ -120,21 +111,30 @@ fun! s:echoerror(whaa) "{{{
   call s:echoformated("Error", a:whaa)
 endfunction "}}}
 
+fun! s:echonotcompile(msg) "{{{
+    hi WarnGroup ctermfg=white ctermbg=15 guifg=Black guibg=DarkYellow
+    call s:echoformated("WarnGroup", a:msg)
+endfunction "}}}
+
 fun! s:echosuccess(wohoo) "{{{
-  hi SuccessGroup ctermfg=white ctermbg=DarkGreen
+  hi SuccessGroup ctermfg=white ctermbg=DarkGreen guifg=white guibg=DarkGreen
   call s:echoformated("SuccessGroup", a:wohoo)
 endfunction "}}}
 
 fun! s:echoformated(format, message) "{{{
+  call s:formatmessage(a:format, a:message)
+  call s:clear_echo_output()
+endfunction "}}}
+
+fun! s:formatmessage(format, message) "{{{
   let l:numcols = &columns
   let l:iterations=l:numcols - 2 - len(a:message)
   execute "echohl " . a:format
   echon a:message . repeat(' ', l:iterations)
-  call s:clear_echo_output()
+  echohl Normal
 endfunction "}}}
 
 fun! s:clear_echo_output() "{{{
-  echohl Normal
   sleep 150m
   for i in range(&cmdheight)
     echo ' '
@@ -142,9 +142,25 @@ fun! s:clear_echo_output() "{{{
   redraw
 endfunction "}}}
 
+fun! s:total_classes() "{{{
+  let l:file = '.vimjavastuff/jars_on_cp'
+  if !filereadable(l:file)
+    PrepareForMaven
+  endif
+  let l:lines = readfile(l:file)
+  let l:count=0
+  for l:line in l:lines
+    let l:count += len(filter(split(system(g:jar_command . ' tf '. l:line), '\n'), 'v:val =~ "\.class$"'))
+  endfor
+  echom 'a total of ' . l:count . ' lines'
+endfunction "}}}
+
 command! PrepareForMaven call s:create_fake_jar_and_index_file()
 command! Test call s:exec_junit()
 command! C execute "w" | call s:compile_this()
 command! Scream call s:echoerror('gaaaaaaa!!!!')
 command! Woho call s:echosuccess('Woho!')
+command! Ouch call s:echonotcompile('Ouch!')
+command! CountClasses call s:total_classes()
+
 
