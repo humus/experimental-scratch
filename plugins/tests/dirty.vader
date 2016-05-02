@@ -1,7 +1,7 @@
 Given (package string):
   package foo.bar.baz;
 
-  org.springframework.beans.factory.annotation.Bean//FOOO
+  @org.springframework.beans.factory.annotation.Bean//FOOO
 Execute:
   normal G$FB
   call import_cword#Import_THIS()
@@ -9,7 +9,7 @@ Expect:
   package foo.bar.baz;
   import org.springframework.beans.factory.annotation.Bean;
 
-  org.springframework.beans.factory.annotation.Bean//FOOO
+  @Bean//FOOO
 
 Given (package string and import):
   package foo.bar.baz;
@@ -26,4 +26,52 @@ Expect:
   import foo.bar.baz.pkg.*;
   import org.slf4j.Logger;
 
+  Logger
+
+Given (import exists):
+  package foo.bar.baz;
+
+  import x.y.z.mypackage;
+  import org.slf4j.Logger;
+
   org.slf4j.Logger
+Execute:
+  normal Gw
+  call import_cword#Import_THIS()
+Expect:
+  package foo.bar.baz;
+
+  import x.y.z.mypackage;
+  import org.slf4j.Logger;
+
+  Logger
+Given (Two cases in same line):
+  package foo.bar.baz;
+  import x.y.z.mypackage;
+
+  private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MyClazz.class);
+Execute:
+  normal GfL
+  call import_cword#Import_THIS()
+Expect:
+  package foo.bar.baz;
+  import x.y.z.mypackage;
+  import org.slf4j.Logger;
+
+  private static final Logger log = org.slf4j.LoggerFactory.getLogger(MyClazz.class);
+# This test still does not pass, need more steps
+#Given (first unexpected):
+#  package foo.bar.baz;
+#  import org.slf4j.Logger;
+#
+#  private static final Logger log = org.slf4j.LoggerFactory.getLogger(MyClazz.class);
+#Execute:
+#  normal Gf4
+#  call import_cword#Import_THIS()
+#Expect:
+#  package foo.bar.baz;
+#  import x.y.z.mypackage;
+#  import org.slf4j.Logger;
+#  import org.slf4j.LoggerFactory;
+#
+#  private static final Logger log = LoggerFactory.getLogger(MyClazz.class);
