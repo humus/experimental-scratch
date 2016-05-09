@@ -59,19 +59,33 @@ Expect:
   import org.slf4j.Logger;
 
   private static final Logger log = org.slf4j.LoggerFactory.getLogger(MyClazz.class);
-# This test still does not pass, need more steps
-#Given (first unexpected):
-#  package foo.bar.baz;
-#  import org.slf4j.Logger;
-#
-#  private static final Logger log = org.slf4j.LoggerFactory.getLogger(MyClazz.class);
-#Execute:
-#  normal Gf4
-#  call import_cword#Import_THIS()
-#Expect:
-#  package foo.bar.baz;
-#  import x.y.z.mypackage;
-#  import org.slf4j.Logger;
-#  import org.slf4j.LoggerFactory;
-#
-#  private static final Logger log = LoggerFactory.getLogger(MyClazz.class);
+
+Given (Invoking static method with fqcn):
+  package foo.bar.baz;
+  import org.slf4j.Logger;
+
+  private static final Logger log = org.slf4j.LoggerFactory.getLogger(MyClazz.class);
+Execute:
+  normal Gf4
+  call import_cword#Import_THIS()
+Expect:
+  package foo.bar.baz;
+  import org.slf4j.Logger;
+  import org.slf4j.LoggerFactory;
+
+  private static final Logger log = LoggerFactory.getLogger(MyClazz.class);
+
+Given (new with fqcn):
+  package foo.bar.baz;
+  import org.slf4j.Logger;
+
+  private static final Logger log = new org.slf4j.LoggerFactory().getLogger(MyClazz.class);
+Execute:
+  normal Gf4
+  call import_cword#Import_THIS()
+Expect:
+  package foo.bar.baz;
+  import org.slf4j.Logger;
+  import org.slf4j.LoggerFactory;
+
+  private static final Logger log = new LoggerFactory().getLogger(MyClazz.class);
