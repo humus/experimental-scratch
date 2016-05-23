@@ -31,7 +31,7 @@ fun! j#move_line_inpalette(direction) "{{{
   if new_line > 0 && new_line <= line('$')
     let l:pos[1] += a:direction
     call setpos('.', l:pos)
-    set cursorline! | set cursorline!
+    set cursorline! | set cursorline! "cursorline doesn't redraw by just moving it :redraw is slow. This is better
   endif
   exe 'noautocmd ' . l:cur_win . 'wincmd w'
 endfunction "}}}
@@ -40,10 +40,11 @@ fun! j#maps_for_driving_palette() "{{{
   "Mappings C-J and C-K should support a count
   nnoremap <buffer><silent> <C-J> :call j#move_line_inpalette(1)<cr>
   nnoremap <buffer><silent> <C-K> :call j#move_line_inpalette(-1)<cr>
-  nnoremap <buffer><silent> <C-Q> :call j#undo_mappings(bufnr(g:palette_window_name))<cr>
+  nnoremap <buffer><silent> <C-Q> :call j#wipebuffer_revertmappings(bufnr(g:palette_window_name))<cr>
+
 endfunction "}}}
 
-fun! j#undo_mappings(the_buf) "{{{
+fun! j#wipebuffer_revertmappings(the_buf) "{{{
   execute ':bw' . a:the_buf
   nunmap <buffer> <C-Q>
   nunmap <buffer> <C-J>
