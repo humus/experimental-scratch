@@ -42,8 +42,8 @@ fun! j#maps_for_driving_palette() "{{{
   nnoremap <buffer><silent> <C-K> :call j#move_line_inpalette(-1)<cr>
   nnoremap <buffer><silent> <C-G>i :call j#feed_element('i')<cr>
   nnoremap <buffer><silent> <C-G>a :call j#feed_element('a')<cr>
-  nnoremap <buffer><silent> <C-G>I :call j#insert_element_above()<cr>
-  nnoremap <buffer><silent> <C-G>A :call j#insert_element_below()<cr>
+  nnoremap <buffer><silent> <C-G>I :call j#feed_element('O')<cr>
+  nnoremap <buffer><silent> <C-G>A :call j#feed_element('o')<cr>
   nnoremap <buffer><silent> <C-Q> :call j#wipebuffer_revertmappings(bufnr(g:palette_window_name))<cr>
 
 endfunction "}}}
@@ -60,11 +60,16 @@ fun! j#wipebuffer_revertmappings(the_buf) "{{{
   nunmap <buffer> <C-G>A
 endfunction "}}}
 
-fun! j#locate_str_to_feed() "{{{
+fun! j#locate_str_to_feed_and_move_cursor() "{{{
   let l:cur_win = bufwinnr('%')
   let l:palette_window = bufwinnr(g:palette_window_name)
   execute 'noautocmd ' . l:palette_window . 'wincmd w'
   let l:str=getline(line('.'))
+  let l:pos=getcurpos()
+  let l:lines = line('$')
+  let l:line = l:pos[1] + 1
+  if l:line > l:lines | let l:line = l:lines | endif
+  call setpos('.', [l:pos[0], l:line, l:pos[2], l:pos[3]])
   execute 'noautocmd ' . l:cur_win . 'wincmd w'
   return l:str
 endfunction "}}}
@@ -72,7 +77,7 @@ endfunction "}}}
 fun! j#feed_element(feedchar) "{{{
   let l:str_to_feed = join([
         \ a:feedchar,
-        \ j#locate_str_to_feed(),
+        \ j#locate_str_to_feed_and_move_cursor(),
         \ ''], '')
   call feedkeys(l:str_to_feed)
 endfunction "}}}
