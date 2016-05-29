@@ -31,7 +31,7 @@ fun! j#move_line_inpalette(direction) "{{{
   if new_line > 0 && new_line <= line('$')
     let l:pos[1] += a:direction
     call setpos('.', l:pos)
-    set cursorline! | set cursorline! "cursorline doesn't redraw by just moving it :redraw is slow. This is better
+    set cul! | set cul! "cursorline doesn't redraw by just moving it :redraw is slow. This is better
   endif
   exe 'noautocmd ' . l:cur_win . 'wincmd w'
 endfunction "}}}
@@ -70,24 +70,36 @@ fun! j#locate_str_to_feed_and_move_cursor() "{{{
   let l:line = l:pos[1] + 1
   if l:line > l:lines | let l:line = l:lines | endif
   call setpos('.', [l:pos[0], l:line, l:pos[2], l:pos[3]])
+  set cul! | set cul!
   execute 'noautocmd ' . l:cur_win . 'wincmd w'
   return l:str
 endfunction "}}}
 
 fun! j#feed_element(feedchar) "{{{
+  let str_to_insert =  j#locate_str_to_feed_and_move_cursor()
+  let cur_indent = matchstr(getline(line('.')), '^\v\s+\ze')
+  let pos = getcurpos()
+  if a:feedchar ==# 'o'
+    call append(line('.'), cur_indent . str_to_insert)
+    call setpos('.', [pos[0], pos[1] + 1, pos[2], pos[3]])
+    return
+  elseif a:feedchar ==# 'O'
+    call append(line('.') - 1, cur_indent . str_to_insert)
+    return
+  endif
   let l:str_to_feed = join([
         \ a:feedchar,
-        \ j#locate_str_to_feed_and_move_cursor(),
+        \ str_to_insert,
         \ ''], '')
   call feedkeys(l:str_to_feed)
 endfunction "}}}
 
-fun! j#insert_element_above() "{{{
-  call j#insert_above_cursor(j#locate_str_to_feed())
+fun! j#insert_element_above(element) "{{{
+  call j#insert_above_cursor(a:element)
 endfunction "}}}
 
-fun! j#insert_element_below() "{{{
-  call j#insert_below_cursor(j#locate_str_to_feed())
+fun! j#insert_element_below(element) "{{{
+  call j#insert_below_cursor(a:element)
 endfunction "}}}
 
 fun! j#set_default_mappings_for_palette_window() "{{{
