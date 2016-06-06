@@ -1,8 +1,8 @@
 
 command! Importthis call import_cword#Import_THIS()
 
-inoremap 	 :ImportThis<cr>
+inoremap  :ImportThis<cr>
+nnoremap  :ImportThis<cr>
 
-command! SeePalette call j#show_palette()
+command! -nargs=* SeePalette call j#show_palette(<f-args>)
 
-cabbrev sepa SeePalete

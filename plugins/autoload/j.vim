@@ -3,9 +3,16 @@
 "window or alter buffer context with the plugin
 let s:position = []
 let g:palette_window_name='session current palette'
+let s:file_palette_name = expand(fnameescape("$HOME/.vimdata/palette"))
+let g:palette_glob_content = []
 
 fun! j#load() "{{{
+  let lines = []
+  if filereadable(s:file_palette_name)
+    let g:palette_glob_content = readfile(s:file_palette_name)
+  endif
 endfunction "}}}
+
 
 fun! j#paletethis() "{{{
   let l:pos = searchpos('\v^package [^;]+;', 'bn')[1]
@@ -16,11 +23,24 @@ fun! j#paletethis() "{{{
   echo l:mypackage
 endfunction "}}}
 
-fun! j#show_palette() "{{{
+fun! j#show_palette(...) "{{{
+  call j#filter_palette(a:000)
   let l:working_window = bufwinnr('%')
   call j#prepare_palette_window()
   execute l:working_window . 'wincmd w'
   call j#maps_for_driving_palette()
+endfunction "}}}
+
+fun! j#filter_palette(elements) "{{{
+  let g:palette_content = copy(g:palette_glob_content)
+  if len(a:elements) == 0
+    return
+  endif
+  for word in a:elements
+    let word = substitute(word, '\v\c[^_A-Z0-9.]', '', 'g')
+    let word = substitute(word, '\v\.', '\.', 'g')
+    call filter(g:palette_content, 'v:val =~? ''\v.*'.word.'.*''')
+  endfor
 endfunction "}}}
 
 fun! j#move_line_inpalette(direction) "{{{
@@ -68,9 +88,9 @@ fun! j#locate_str_to_feed_and_move_cursor() "{{{
   let l:pos=getcurpos()
   let l:lines = line('$')
   let l:line = l:pos[1] + 1
-  if l:line > l:lines | let l:line = l:lines | endif
+  if l:line > l:lines | let l:line = 1 | endif
   call setpos('.', [l:pos[0], l:line, l:pos[2], l:pos[3]])
-  set cul! | set cul!
+  set cul! | set cul! "cursorline doesn't redraw by just moving it :redraw is slow. This is better
   execute 'noautocmd ' . l:cur_win . 'wincmd w'
   return l:str
 endfunction "}}}
@@ -150,4 +170,4 @@ fun! j#append_and_then_resetcursor(str_for_insert, line) "{{{
   call setpos('.', s:position)
 endfunction "}}}
 
-
+call j#load()
