@@ -1,0 +1,54 @@
+Before:
+  let line = getline(line('.'))
+Given:
+  (()xd()
+Execute:
+  let without_matched_parends = tab_inline_balancer#drop_balanced_parens(line)
+Then:
+  Assert without_matched_parends == '(xd'
+
+Execute:
+  let must_be_1 = tab_inline_balancer#is_line_balanced('aaa()')
+Then:
+  Assert must_be_1
+
+
+Given:
+  ( ( ) xd ( )
+Execute:
+  let line = getline(line('.'))
+  let without_matched_parends = tab_inline_balancer#drop_balanced_parens(line)
+Then:
+  Assert without_matched_parends == '(  xd'
+
+Given(is last column):
+  ( ) xd () (
+Execute:
+  execute "normal A=tab_inline_balancer#is_last_column()"
+Expect:
+  ( ) xd () (1
+
+Given( an unbalanced str):
+  ( ) xd () (
+Execute:
+  execute "normal A\<Tab>"
+Expect:
+  ( ) xd () ()
+Given (a method call):
+  aaa()
+Execute:
+  set noet
+  let b:end_complete_char=';'
+  execute "normal A\<Tab>"
+Expect:
+  aaa();
+
+Given:
+  
+        
+Execute:
+  execute "normal A=tab_inline_balancer#is_last_column()"
+  execute "normal jA=tab_inline_balancer#is_last_column()"
+Expect:
+  0
+        0
